@@ -1,0 +1,574 @@
+ <!DOCTYPE html>
+ <html lang="he" dir="rtl">
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta
+       name="description"
+       content="כלי להמרת קבצי Word לחידוני Kahoot - המרה מהירה ופשוטה של מבחנים אמריקאיים לפורמט Kahoot"
+     />
+     <meta
+       name="keywords"
+       content="kahoot, word to kahoot, המרת word ל kahoot, חידון kahoot, מחולל חידונים, חידונים למורים"
+     />
+     <meta name="author" content="Yoni Wasilewski" />
+     <meta property="og:title" content="מחולל Kahoot מקובץ Word" />
+     <meta
+       property="og:description"
+       content="כלי להמרת קבצי Word לחידוני Kahoot - המרה מהירה ופשוטה של מבחנים אמריקאיים"
+     />
+     <meta property="og:type" content="website" />
+     <title>מחולל Kahoot מקובץ Word | המרת מבחנים אמריקאיים</title>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+     <style>
+       /* General body and container adjustments */
+       body {
+         font-family: Arial, sans-serif;
+         margin: 10px;
+         text-align: center;
+         background-color: #f5f5f5;
+         font-size: 16px;
+       }
+
+       .container {
+         max-width: 95%;
+         margin: 10px auto;
+         background-color: white;
+         padding: 10px;
+         border-radius: 8px;
+         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+       }
+
+       /* Table adjustments */
+       .table-container {
+         width: 100%;
+         overflow-x: auto; /* Enable horizontal scrolling */
+       }
+
+       table {
+         width: auto; /* Allow table to expand horizontally */
+         border-collapse: collapse;
+         margin-top: 10px;
+         background-color: white;
+         font-size: 0.8rem;
+         min-width: 100%; /* Ensure table takes at least 100% width */
+       }
+
+       th,
+       td {
+         border: 1px solid #ddd;
+         padding: 8px;
+         text-align: right;
+         white-space: nowrap; /* Prevent text from wrapping */
+       }
+
+       th {
+         background-color: #461a8f;
+         color: white;
+       }
+
+       tr:nth-child(even) {
+         background-color: #f9f9f9;
+       }
+
+       td.correct-answer {
+         background-color: #e6f3ff;
+         font-weight: bold;
+         text-align: center;
+       }
+
+       /* Button adjustments */
+       .button-group {
+         margin: 10px 0;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+       }
+
+       button {
+         padding: 8px 16px;
+         background-color: #461a8f;
+         color: white;
+         border: none;
+         border-radius: 4px;
+         cursor: pointer;
+         margin: 5px 0;
+         width: 100%;
+         box-sizing: border-box;
+       }
+
+       button:hover {
+         background-color: #351470;
+       }
+
+       /* Instructions adjustments */
+       .instructions {
+         background-color: #461a8f;
+         color: white;
+         padding: 10px;
+         border-radius: 4px;
+         margin: 10px 0;
+         text-align: right;
+         font-size: 0.9rem;
+       }
+
+       .instruction-step {
+         display: flex;
+         align-items: center;
+         gap: 8px;
+         margin: 5px 0;
+         font-size: 0.9rem;
+       }
+
+       .instruction-step[data-has-help]::after {
+         content: "ℹ️";
+         cursor: pointer;
+       }
+
+       /* Dialog adjustments */
+       dialog {
+         border: none;
+         border-radius: 8px;
+         padding: 15px;
+         max-width: 90vw;
+         max-height: 90svh;
+         overflow: auto;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+       }
+
+       dialog::backdrop {
+         background-color: rgba(0, 0, 0, 0.5);
+       }
+
+       dialog img {
+         max-width: 100%;
+         height: auto;
+         border-radius: 4px;
+       }
+
+       dialog .close-button {
+         position: absolute;
+         top: 5px;
+         right: 5px;
+         background: none;
+         border: none;
+         font-size: 16px;
+         cursor: pointer;
+         color: #666;
+       }
+
+       /* Footer adjustments */
+       .footer {
+         margin-top: 20px;
+         padding: 10px;
+         text-align: center;
+         color: #666;
+         border-top: 1px solid #ddd;
+         font-size: 0.8rem;
+       }
+
+       /* Error and success message adjustments */
+       .error-message {
+         color: #ff0000;
+         background-color: #ffe6e6;
+         padding: 8px;
+         border-radius: 4px;
+         margin: 5px 0;
+         display: none;
+         font-size: 0.9rem;
+       }
+
+       .success-message {
+         color: #008000;
+         background-color: #e6ffe6;
+         padding: 8px;
+         border-radius: 4px;
+         margin: 5px 0;
+         display: none;
+         font-size: 0.9rem;
+       }
+
+       /* Media query for larger screens (e.g., tablets and desktops) */
+       @media (min-width: 768px) {
+         body {
+           margin: 20px;
+         }
+
+         .container {
+           max-width: 1200px;
+           padding: 20px;
+           margin: 0 auto;
+         }
+
+         table {
+           margin-top: 20px;
+           font-size: 1rem;
+         }
+
+         th,
+         td {
+           padding: 12px;
+         }
+
+         .button-group {
+           margin: 20px 0;
+           flex-direction: row;
+           justify-content: center;
+         }
+
+         button {
+           padding: 10px 20px;
+           margin: 0 10px;
+           width: auto;
+         }
+
+         .instructions {
+           padding: 15px;
+           margin: 20px 0;
+           font-size: 1rem;
+         }
+
+         .instruction-step {
+           margin: 10px 0;
+         }
+
+         dialog {
+           padding: 20px;
+           max-width: 80vw;
+           max-height: 80svh;
+         }
+
+         dialog .close-button {
+           top: 10px;
+           right: 10px;
+           font-size: 20px;
+         }
+
+         .footer {
+           margin-top: 40px;
+           padding: 20px;
+           font-size: 1rem;
+         }
+
+         .error-message,
+         .success-message {
+           padding: 10px;
+           margin: 10px 0;
+           font-size: 1rem;
+         }
+       }
+     </style>
+   </head>
+   <body>
+     <div class="container">
+       <h2>מחולל Kahoot מקובץ Word</h2>
+
+       <div class="instructions">
+         <h3>הנחיות:</h3>
+         <p class="instruction-step" data-has-help data-help-id="export-magic">
+           0. ייצאו את המבחן מ-Magic School כקובץ Word
+         </p>
+         <p class="instruction-step">1. העלו קובץ Word עם שאלות אמריקאיות</p>
+         <p class="instruction-step">2. בדקו את התצוגה המקדימה</p>
+         <p class="instruction-step">3. ייצאו לקובץ Excel בפורמט Kahoot</p>
+         <p class="instruction-step" data-has-help data-help-id="upload-kahoot">
+           4. העלו את קובץ ה-Excel ל-Kahoot
+         </p>
+       </div>
+
+       <!-- Dialogs for help images -->
+       <dialog id="export-magic">
+         <button class="close-button" onclick="this.parentElement.close()">
+           ×
+         </button>
+         <h3>ייצוא מ-Magic School</h3>
+         <img
+           src="https://cdn.jsdelivr.net/gh/yoni-edrigo/3dModel@bd9ef397c34fa470e6b30f2a8ac787b2d41d6c31/magic-school-docx-export.png"
+           alt="ייצוא מ-Magic School"
+         />
+       </dialog>
+
+       <dialog id="upload-kahoot">
+         <button class="close-button" onclick="this.parentElement.close()">
+           ×
+         </button>
+         <h3>העלאה ל-Kahoot</h3>
+         <img
+           src="https://support.kahoot.com/hc/article_attachments/37132826941971"
+           alt="העלאה ל-Kahoot"
+         />
+       </dialog>
+
+       <div id="errorMessage" class="error-message"></div>
+       <div id="successMessage" class="success-message"></div>
+
+       <div class="button-group">
+         <input type="file" id="fileInput" accept=".docx" class="file-input" />
+         <button onclick="document.getElementById('fileInput').click()">
+           העלאת קובץ Word
+         </button>
+         <button onclick="exportToKahoot()" id="exportButton" disabled>
+           ייצוא ל-Kahoot
+         </button>
+       </div>
+
+       <div class="table-container">
+         <table id="previewTable">
+           <thead>
+             <tr>
+               <th>מספר</th>
+               <th>שאלה</th>
+               <th>תשובה א</th>
+               <th>תשובה ב</th>
+               <th>תשובה ג</th>
+               <th>תשובה ד</th>
+               <th>תשובה נכונה</th>
+             </tr>
+           </thead>
+           <tbody></tbody>
+         </table>
+       </div>
+
+       <footer class="footer">נוצר על ידי יוני וסילבסקי - 054-7282-477</footer>
+     </div>
+
+     <script>
+       let questionData = [];
+
+       function showError(message) {
+         const errorDiv = document.getElementById("errorMessage");
+         errorDiv.textContent = message;
+         errorDiv.style.display = "block";
+         setTimeout(() => {
+           errorDiv.style.display = "none";
+         }, 5000);
+       }
+
+       function showSuccess(message) {
+         const successDiv = document.getElementById("successMessage");
+         successDiv.textContent = message;
+         successDiv.style.display = "block";
+         setTimeout(() => {
+           successDiv.style.display = "none";
+         }, 5000);
+       }
+
+       document
+         .getElementById("fileInput")
+         .addEventListener("change", function (event) {
+           const file = event.target.files[0];
+           if (!file) {
+             showError("לא נבחר קובץ");
+             return;
+           }
+
+           const reader = new FileReader();
+           reader.onload = function () {
+             mammoth
+               .extractRawText({ arrayBuffer: reader.result })
+               .then(function (result) {
+                 if (result.messages.length > 0) {
+                   console.log("Mammoth messages:", result.messages);
+                 }
+                 parseQuestions(result.value);
+                 showSuccess("הקובץ נטען בהצלחה");
+               })
+               .catch(function (err) {
+                 console.error("Error parsing DOCX:", err);
+                 showError("שגיאה בקריאת הקובץ");
+               });
+           };
+           reader.onerror = function () {
+             showError("שגיאה בקריאת הקובץ");
+           };
+           reader.readAsArrayBuffer(file);
+         });
+
+       function parseQuestions(text) {
+         try {
+           questionData = [];
+
+           // Split into questions and answers sections
+           let sections = text.split("מפתח תשובות");
+           if (sections.length !== 2) {
+             throw new Error("לא נמצא מפתח תשובות בקובץ");
+           }
+
+           let questionsText = sections[0];
+           let answersText = sections[1];
+
+           // Parse answers first
+           let answers = [];
+           if (answersText) {
+             answers = answersText
+               .split("\n")
+               .map((line) => {
+                 const match = line.match(/[א-ד]/);
+                 return match ? match[0] : "";
+               })
+               .filter((answer) => answer !== "");
+           }
+
+           if (answers.length === 0) {
+             throw new Error("לא נמצאו תשובות נכונות בקובץ");
+           }
+
+           // Parse questions
+           let questions = questionsText
+             .split(/(?=\d+\.)/)
+             .map((q) => q.trim())
+             .filter((q) => q.length > 0 && /^\d+\./.test(q));
+
+           questions.forEach((questionBlock, index) => {
+             // Extract question number and text
+             let questionMatch = questionBlock.match(/^(\d+)\.\s*(.*?)\?/);
+             if (!questionMatch) return;
+
+             let questionNumber = parseInt(questionMatch[1]);
+             let questionText = questionMatch[2] + "?";
+
+             // Extract options
+             let optionsText = questionBlock.substring(
+               questionBlock.indexOf("?") + 1
+             );
+             let options = [];
+             let optionMatches = Array.from(
+               optionsText.matchAll(/([א-ד])\.\s*(.*?)(?=[א-ד]\.|$)/gs)
+             );
+
+             optionMatches.forEach((match) => {
+               let optionLetter = match[1];
+               let optionText = match[2].trim();
+               let index = "אבגד".indexOf(optionLetter);
+               if (index !== -1) {
+                 options[index] = optionText;
+               }
+             });
+
+             if (options.length > 0) {
+               questionData.push({
+                 number: questionNumber,
+                 question: questionText,
+                 options: options,
+                 correctAnswer: answers[questionNumber - 1] || "",
+               });
+             }
+           });
+
+           document.getElementById("exportButton").disabled =
+             questionData.length === 0;
+           updatePreview();
+
+           if (questionData.length === 0) {
+             throw new Error("לא נמצאו שאלות בפורמט המתאים");
+           }
+         } catch (error) {
+           showError(error.message);
+           console.error("Parsing error:", error);
+         }
+       }
+
+       function updatePreview() {
+         let tableBody = document.querySelector("#previewTable tbody");
+         tableBody.innerHTML = "";
+
+         questionData.forEach((q) => {
+           let row = document.createElement("tr");
+           row.innerHTML = `
+                     <td>${q.number}</td>
+                     <td>${q.question}</td>
+                     <td ${
+                       q.correctAnswer === "א" ? 'class="correct-answer"' : ""
+                     }>${q.options[0] || ""}</td>
+                     <td ${
+                       q.correctAnswer === "ב" ? 'class="correct-answer"' : ""
+                     }>${q.options[1] || ""}</td>
+                     <td ${
+                       q.correctAnswer === "ג" ? 'class="correct-answer"' : ""
+                     }>${q.options[2] || ""}</td>
+                     <td ${
+                       q.correctAnswer === "ד" ? 'class="correct-answer"' : ""
+                     }>${q.options[3] || ""}</td>
+                     <td class="correct-answer">${q.correctAnswer}</td>
+                 `;
+           tableBody.appendChild(row);
+         });
+       }
+
+       function exportToKahoot() {
+         try {
+           if (questionData.length === 0) {
+             throw new Error("אין נתונים לייצוא");
+           }
+
+           const wb = XLSX.utils.book_new();
+
+           const wsData = [
+             ["Quiz template"],
+             [
+               "Add questions, at least two answer alternatives, time limit and choose correct answers (at least one). Have fun creating your awesome quiz!",
+             ],
+             [
+               "Remember: questions have a limit of 120 characters and answers can have 75 characters max.",
+             ],
+             [],
+             [
+               "Question - max 120 characters",
+               "Answer 1 - max 75 characters",
+               "Answer 2 - max 75 characters",
+               "Answer 3 - max 75 characters",
+               "Answer 4 - max 75 characters",
+               "Time limit (sec)",
+               "Correct answer(s)",
+             ],
+           ];
+
+           questionData.forEach((q) => {
+             wsData.push([
+               q.question,
+               q.options[0] || "",
+               q.options[1] || "",
+               q.options[2] || "",
+               q.options[3] || "",
+               "60",
+               "אבגד".indexOf(q.correctAnswer) + 1,
+             ]);
+           });
+
+           const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+           ws["!cols"] = [
+             { wch: 50 }, // Question
+             { wch: 30 }, // Answer 1
+             { wch: 30 }, // Answer 2
+             { wch: 30 }, // Answer 3
+             { wch: 30 }, // Answer 4
+             { wch: 15 }, // Time limit
+             { wch: 20 }, // Correct answer
+           ];
+
+           XLSX.utils.book_append_sheet(wb, ws, "Quiz");
+           XLSX.writeFile(wb, "kahoot_quiz.xlsx");
+           showSuccess("הקובץ יוצא בהצלחה");
+         } catch (error) {
+           showError(error.message);
+           console.error("Export error:", error);
+         }
+       }
+
+       // Add event listeners to instruction steps with help
+       document.querySelectorAll(".instruction-step[data-has-help]").forEach(
+         (step) => {
+           step.addEventListener("click", function () {
+             const helpId = this.dataset.helpId;
+             const dialog = document.getElementById(helpId);
+             if (dialog) {
+               dialog.showModal();
+             }
+           });
+         }
+       );
+     </script>
+   </body>
+ </html>
